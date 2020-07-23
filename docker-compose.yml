@@ -1,0 +1,37 @@
+# docker build --rm -t lr2app:latest .
+
+version: '2.1'
+services:
+  lr2-flask:
+    image: lr2app
+    restart: on-failure
+    environment:
+      TZ: /usr/share/zoneinfo/Europe/Madrid
+    volumes:
+      - ./src:/app
+      - ./upload:/upload
+    ports:
+      - "5000:5000"
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    volumes:
+      - ./grafana/grafana.db:/var/lib/grafana/grafana.db
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    ports:
+     - 3000:3000
+   
+  influxdb:
+    image: influxdb:alpine
+    restart: always
+    volumes:
+      - /containers/influxdb_lr2db:/var/lib/influxdb
+    ports:
+      -  8086:8086  
+    healthcheck:
+        test: ["CMD", "nc", "-nvzw1", "localhost", "8086"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+

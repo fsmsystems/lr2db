@@ -21,17 +21,35 @@ services:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
     ports:
      - 3000:3000
+    environment:
+    - "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel,grafana-influxdb-flux-datasource"
    
   influxdb:
     image: influxdb:alpine
+    #image: quay.io/influxdb/influxdb:2.0.0-beta
     restart: always
     volumes:
       - /containers/influxdb_lr2db:/var/lib/influxdb
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf
     ports:
       -  8086:8086  
+      -  9999:9999
     healthcheck:
+        #test: ["CMD", "nc", "-nvzw1", "localhost", "9999"]
         test: ["CMD", "nc", "-nvzw1", "localhost", "8086"]
         interval: 30s
         timeout: 10s
         retries: 5
 
+  chronograf:
+      image: chronograf:alpine
+      ports:
+        - '127.0.0.1:8888:8888'
+      volumes:
+        - /containers/chronograf_lr2db:/var/lib/chronograf
+      depends_on:
+        - influxdb
+      environment:
+        - INFLUXDB_URL=http://influxdb:8086
+        - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+        - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
